@@ -1,5 +1,5 @@
 library("gmapsdistance")
-set.api.key("AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
+#set.api.key("Enter api key")
 
 library(readr)
 library(dplyr)
