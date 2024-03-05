@@ -1,15 +1,15 @@
 library("gmapsdistance")
-set.api.key("AIzaSyB76lzKhfu1lbvbArWYlPL8R21xMcgqCmo")
+set.api.key("AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
 
 library(readr)
 library(dplyr)
 
 #Load Data
-gkgw <- read_csv("GKGW data.csv") %>% 
+gkgw <- read_csv("GKGWdata.csv") %>% 
   mutate(across(c(2, 3), as.character))
 
 #Prepare Destinations
-destination <- unique(c(gkgw[,2], gkgw[,3])) #Extract 2nd and 3rd column
+destination <- unique(unlist(c(gkgw[,2], gkgw[,3])))
 dest <- gsub(" ", "+", destination) #format properly for api
 
 #Initialize matrices
@@ -28,10 +28,5 @@ for (i in 2:length(dest)) {
 time <- time + t(time)
 dist <- dist + t(dist)
 
-save(time, dist, dest, file="gokidgoweb.Rda")
-
-load(file="gokidgoweb.Rda")
-
-for (j in 2:3) gkgw[,j] <- apply(outer(gkgw[,j],dest,"=="),1,which)
-
-# https://towardsdatascience.com/how-does-uber-use-clustering-43b21e3e6b7d
+route_data <- list(distance = dist, time = time, destinations = dest)
+save(route_data, file="gokidgoweb.Rda")
