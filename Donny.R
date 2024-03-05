@@ -10,7 +10,7 @@ normalized_time <- z_score_standardization(route_data$time)
 
 combined_metric <- data.frame(normalized_distance, normalized_time)
 
-hc <- hclust(dist(combined_metric), method = "complete")
+hc <- hclust(dist(normalized_time), method = "complete")
 
 plot(hc)
 plot(hc$height, type = "b")
