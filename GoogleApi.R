@@ -1,5 +1,6 @@
 library("gmapsdistance")
-#set.api.key("Enter api key")
+#set.api.key("Enter api Key")
+
 
 library(readr)
 library(dplyr)
@@ -10,6 +11,7 @@ gkgw <- read_csv("GKGWdata.csv") %>%
 
 #Prepare Destinations
 destination <- unique(unlist(c(gkgw[,2], gkgw[,3])))
+destination <- destination[-5]
 dest <- gsub(" ", "+", destination) #format properly for api
 
 #Initialize matrices
