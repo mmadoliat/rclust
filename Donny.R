@@ -1,5 +1,9 @@
 load("gokidgoweb.Rda")
 library(readr)
+library(ggplot2)
+library(ggmap)
+library(ggforce) 
+library(dplyr)
 
 z_score_standardization <- function(x) {
   return ((x - mean(x)) / sd(x))
@@ -28,5 +32,25 @@ route_data$cluster <- cutree(hc, k = 7)
 route_data$latitude <- geolocations_filtered$latitude
 route_data$longitude <- geolocations_filtered$longitude
 
-#finding cluster centroids(mean of lat and long for each cluster)
-final_data <- aggregate(route_data, by=list(cluster=route_data$cluster), mean)
+
+route_data <- as.data.frame(route_data)
+cluster_sizes <- route_data %>%
+  group_by(cluster) %>%
+  summarise(size = n())
+
+final_data <- aggregate(cbind(latitude, longitude) ~ cluster, data=route_data, mean)
+final_data <- merge(final_data, cluster_sizes, by = "cluster")
+
+focused_bbox <- c(left = -90, bottom = 42.5, right = -86, top = 43.7)
+
+# Get a Google map for Wisconsin
+focused_map <- get_googlemap(center = c(lon = mean(focused_bbox[c("left", "right")]), 
+                                        lat = mean(focused_bbox[c("bottom", "top")])), 
+                             zoom = 11, scale = 2)
+
+ggmap(focused_map) +
+  geom_point(data = final_data, aes(x = longitude, y = latitude, size = size), color = "red") +
+  scale_size_continuous(range = c(3, 10)) + # Adjust the min and max size as needed
+  theme_minimal() +
+  labs(title = "Cluster Centroids and Sizes in Wisconsin", x = "Longitude", y = "Latitude")
+
