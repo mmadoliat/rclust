@@ -16,10 +16,13 @@ data$formatted_home <- gsub(" ", "+", data$formatted_home)
 data$formatted_destination <- gsub(" ", "+", data$formatted_destination)
 
 destinations <- c(as.vector(data$formatted_home), as.vector(data$formatted_destination))
+location_names <- c(paste("p", seq_along(data$formatted_home), sep = ""),
+                    paste("d", seq_along(data$formatted_destination), sep = ""))
 
 
 # Initialize matrices for distances and times
-dist <- time <- matrix(0, nr=length(destinations), nc=length(destinations))
+dist <- time <- matrix(0, nr=length(destinations), nc=length(destinations), dimnames = list(location_names, location_names))
+
 
 #Calculate distances and times
 for (i in 2:length(destinations)) {
