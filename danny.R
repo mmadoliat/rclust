@@ -12,40 +12,74 @@ load("data.Rda")
 hc <- test::rhclust(pdist, ptime, 0.5, data = data)
 
 plot(hc)
-plot(hc$height, type = "b")
 
-# Read the geolocation data
-geolocations <- read.csv("Geolocations.csv")
+library(googleway)
+set_key("AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
 
-# Filter out points not in Wisconsin
-geolocations_filtered <- geolocations %>%
-  filter(latitude > 42, latitude < 47, longitude > -93, longitude < -86)
+findLocation <- function(loc) {
+  first_char <- substr(loc, 1, 1)
+  num <- as.numeric(substr(loc, 2, nchar(loc)))
+  if (first_char == "p") { # If it starts with 'p', use 'num' to index 'formatted_home'
+    location <- data$formatted_home[num]
+  } else if (first_char == "d") { # If it starts with 'd', use 'num' to index 'formatted_destination'
+    location <- data$formatted_destination[num]
+  }
+  return (location)
+}
 
-route_data$cluster <- cutree(hc, k = 7)
+getDetails <- function(numClusters) {
+  if (numClusters == 5) {
+    origins <- list()
+    destinations <- list()
+    
+    # Loop over each sublist to extract origins and destinations
+    for (i in 1:5) {
+      # Extract the origin from the first element if it exists
+      if (length(hc$merge.route[[i]]) >= 1) {
+        origins[[i]] <- findLocation(hc$merge.route[[i]][[1]])
+      } else {
+        origins[[i]] <- NULL  # Placeholder in case there's no first element
+      }
+      
+      # Extract the destination from the fourth element if it exists
+      if (length(hc$merge.route[[i]]) >= 4) {
+        destinations[[i]] <- findLocation(hc$merge.route[[i]][[4]])
+      } else {
+        destinations[[i]] <- NULL  # Placeholder in case there's no fourth element
+      }
+    }
+   
+    waypoint_vectors <- list()
+    
+    # Loop over each of the first five sublists
+    for (i in 1:5) {
+      # Check if the sublist has at least three elements to avoid indexing errors
+      if (length(hc$merge.route[[i]]) >= 3) {
+        # Create a vector of the second and third elements using findLocation
+        waypoints <- c(findLocation(hc$merge.route[[i]][[2]]), findLocation(hc$merge.route[[i]][[3]]))
+        # Add this vector to the list
+        waypoint_vectors[[i]] <- waypoints
+      } else {
+        # If there are not enough elements in the sublist, add a NULL or suitable placeholder
+        waypoint_vectors[[i]] <- NULL
+      }
+    }
+    return(list(origins = origins, destinations = destinations, waypoints = waypoint_vectors))
+  }
+}
+locations <- getDetails(5)
 
-#add long and lat data to route_data
-route_data$latitude <- geolocations_filtered$latitude
-route_data$longitude <- geolocations_filtered$longitude
+library(googleway)
 
+directions <- google_directions(origin = locations$origins[[1]], 
+                                destination = locations$destinations[[1]],
+                                mode = "driving",
+                                waypoints = locations$waypoints[[1]],
+                                alternatives = TRUE,
+                                key = "AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
 
-route_data <- as.data.frame(route_data)
-cluster_sizes <- route_data %>%
-  group_by(cluster) %>%
-  summarise(size = n())
+print(directions$routes)
 
-final_data <- aggregate(cbind(latitude, longitude) ~ cluster, data=route_data, mean)
-final_data <- merge(final_data, cluster_sizes, by = "cluster")
-
-focused_bbox <- c(left = -90, bottom = 42.5, right = -86, top = 43.7)
-
-# Get a Google map for Wisconsin
-focused_map <- get_googlemap(center = c(lon = mean(focused_bbox[c("left", "right")]), 
-                                        lat = mean(focused_bbox[c("bottom", "top")])), 
-                             zoom = 11, scale = 2)
-
-ggmap(focused_map) +
-  geom_point(data = final_data, aes(x = longitude, y = latitude, size = size), color = "red") +
-  scale_size_continuous(range = c(3, 10)) + # Adjust the min and max size as needed
-  theme_minimal() +
-  labs(title = "Cluster Centroids and Sizes in Wisconsin", x = "Longitude", y = "Latitude")
+map <- google_map(key = "AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
+map <- add_polylines(map, data = directions$routes$overview_polyline, polyline_id = "route")
 
