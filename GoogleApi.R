@@ -4,6 +4,7 @@ library("gmapsdistance")
 library(readr)
 library(dplyr)
 
+set.api.key("AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
 #Load Data
 data <- read_csv("rclust-data.csv")
 
