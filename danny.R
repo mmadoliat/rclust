@@ -125,7 +125,8 @@ geo_data_df <- geocode_address(all_addresses, api_key)
 # Initialize a map using the central location from the geocoded data
 central_location <- geo_data_df[1, c("latitude", "longitude")]
 map <- google_map(location = central_location, key = api_key, zoom = 10)
-colors <- c("red", "blue", "green", "yellow", "purple", "orange", "brown", "black", "grey", "pink")
+colors <- c("red", "blue", "green", "purple", "orange", "brown", "black", "grey", "pink")
+hex_colors <- rgb(col2rgb(colors)/255, maxColorValue=1)
 # Loop through each route's directions and add to the map
 for (i in seq_along(all_routes_directions)) {
   directions <- all_routes_directions[[i]]
@@ -136,10 +137,10 @@ for (i in seq_along(all_routes_directions)) {
     names(polyline_df) <- c("lat", "lng")
     
     # We generate a unique ID for each polyline
-    route_id <- paste("route", i, sep = "_")
-    route_color <- colors[i %% length(colors) + 1]
+    polyline_df$id <- paste("route", i, sep = "_")
+    route_color <- hex_colors[i %% length(hex_colors) + 1]
     map <- add_polylines(map, data = polyline_df, lat = "lat", lon = "lng", 
-                         id = route_id, stroke_colour = route_color, stroke_weight = 4)
+                         id = "id", stroke_colour = route_color, stroke_weight = 4)
   }
 }
 
