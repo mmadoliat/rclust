@@ -15,7 +15,6 @@ hc <- test::rhclust(pdist, ptime, 0.5, data = data)
 
 plot(hc)
 
-#set_key("AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw")
 api_key <- "AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw"
 
 findLocation <- function(loc) {
@@ -33,15 +32,7 @@ getDetails <- function(numClusters) {
   origins <- list()
   destinations <- list()
   waypoint_vectors <- list()
-  if (numClusters == 5) {
-    # Loop over each sublist to extract origins, destinations, and waypoints
-    for (i in 1:5) {
-      origins[[i]] <- findLocation(hc$merge.route[[i]][[1]]) #Starting Point of route
-      destinations[[i]] <- findLocation(hc$merge.route[[i]][[4]]) #Ending point of route
-      waypoint_vectors[[i]] <- lapply(hc$merge.route[[i]][2:3], findLocation)
-    }
-  }
-  else if (numClusters == 3) {
+  if (numClusters == 3) {
     routeNum = c(1,6,7)
     for (i in 1:3) {
       origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]])
@@ -52,14 +43,33 @@ getDetails <- function(numClusters) {
         destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[8]])
         waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:7], findLocation)
       }
-      
     }
   } else if (numClusters == 2) {
     routeNum = c(1,8)
+    for (i in 1:2) {
+      origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]])
+      if (i == 1) {
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[4]])
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:3], findLocation)
+      } else {
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[16]])
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:15], findLocation)
+      }
+    }
+  } else if (numClusters == 1) {
+    origins[[1]] <- findLocation(hc$merge.route[[9]][[1]])
+    destinations[[1]] <- findLocation(hc$merge.route[[9]][[20]])
+    waypoint_vectors[[1]] <- lapply(hc$merge.route[[9]][2:19], findLocation)
+  } else {
+    for (i in 1:5) {
+      origins[[i]] <- findLocation(hc$merge.route[[i]][[1]]) #Starting Point of route
+      destinations[[i]] <- findLocation(hc$merge.route[[i]][[4]]) #Ending point of route
+      waypoint_vectors[[i]] <- lapply(hc$merge.route[[i]][2:3], findLocation)
+    }
   }
   return(list(origins = origins, destinations = destinations, waypoints = waypoint_vectors))
 }
-locations <- getDetails(3)
+locations <- getDetails(5)
 
 get_all_directions <- function(locations, api_key) {
   all_directions <- list()
@@ -84,30 +94,33 @@ get_all_directions <- function(locations, api_key) {
 
 all_routes_directions <- get_all_directions(locations, api_key)
 
-geocode_address <- function(address, api_key) {
+geocode_address <- function(address, types, api_key) {
   base_url <- "https://maps.googleapis.com/maps/api/geocode/json"
   latitudes <- numeric(length = length(address))
   longitudes <- numeric(length = length(address))
+  geo_data_df <- data.frame(address = address, latitude = numeric(length(address)), longitude = numeric(length(address)), type = types)
+  
   for (i in 1:length(address)) {
     response <- GET(url = base_url, query = list(address = address[i], key = api_key))
     parsed_content <- fromJSON(content(response, "text"))
-    lat <- parsed_content$results$geometry$location$lat
-    lng <- parsed_content$results$geometry$location$lng
-    latitudes[i] <- lat
-    longitudes[i] <- lng
-    
+    geo_data_df$latitude[i] <- parsed_content$results$geometry$location$lat
+    geo_data_df$longitude[i] <- parsed_content$results$geometry$location$lng
   }
-  geo_data_df <- data.frame(address = address, latitude = latitudes, longitude = longitudes)
   return (geo_data_df)
 }
 
 flat_waypoints <- unlist(locations$waypoints, recursive = FALSE)
 all_addresses <- c(locations$origins, locations$destinations, flat_waypoints)
 all_addresses <- all_addresses[!sapply(all_addresses, is.null)]
-geo_data_df <- geocode_address(all_addresses, api_key)
+origin_types <- rep("origin", length(locations$origins))
+destination_types <- rep("destination", length(locations$destinations))
+waypoint_types <- rep("waypoint", length(flat_waypoints))
+
+all_types <- c(origin_types, destination_types, waypoint_types)
+geo_data_df <- geocode_address(all_addresses, all_types, api_key)
 
 # Initialize a map using the central location from the geocoded data
-central_location <- geo_data_df[1, c("latitude", "longitude")]
+central_location <- suppressWarnings(geo_data_df[1, c("latitude", "longitude")])
 map <- google_map(location = central_location, key = api_key, zoom = 10)
 colors <- c("red", "blue", "green", "purple", "orange", "brown", "black", "grey", "pink")
 hex_colors <- rgb(col2rgb(colors)/255, maxColorValue=1)
@@ -130,7 +143,7 @@ blue_icon <- list(
 )
 
 green_icon <- list(
-  url = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+  url = "http://maps.google.com/mapfiles/ms/icons/green-dot.png"
 )
 
 red_icon <- list(
@@ -139,8 +152,21 @@ red_icon <- list(
 
 
 # Add markers for the geocoded locations
-map <- add_markers(map, data = geo_data_df, lat = "latitude", lon = "longitude", 
-                   marker_icon = red_icon)
+for (i in 1:nrow(geo_data_df)) {
+  icon_url <- switch(geo_data_df$type[i],
+                     "origin" = green_icon$url,
+                     "waypoint" = blue_icon$url,
+                     "destination" = red_icon$url,
+                     red_icon$url) # default to red if no type matches
+  
+  map <- add_markers(
+    map,
+    data = geo_data_df[i, , drop = FALSE],
+    lat = "latitude",
+    lon = "longitude",
+    marker_icon = list(url = icon_url)
+  )
+}
 
 # Print the map to display it
 print(map)
