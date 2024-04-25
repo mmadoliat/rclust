@@ -13,8 +13,6 @@ load("data.Rda")
 
 hc <- test::rhclust(pdist, ptime, 0.5, data = data)
 
-plot(hc)
-
 api_key <- "AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw"
 
 findLocation <- function(loc) {
