@@ -75,7 +75,7 @@ displayRoutes <- function(weight,numClusters) {
       marker_icon = list(url = icon_url)
     )
   }
-  return map
+  return (map)
 }
 
 findLocation <- function(loc) {
