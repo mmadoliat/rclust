@@ -7,7 +7,7 @@ library(googleway)
 library(httr)
 library(jsonlite)
 
-displayRoutes <- function(weight,numClusters) {
+displayRoutes <- function(weight,numClusters,selectedRoutes) {
   load("pdist.Rda")
   load("ptime.Rda")
   load("data.Rda")
@@ -33,18 +33,18 @@ displayRoutes <- function(weight,numClusters) {
   colors <- c("red", "blue", "green", "purple", "orange", "brown", "black", "grey", "pink")
   hex_colors <- rgb(col2rgb(colors)/255, maxColorValue=1)
   # Loop through each route's directions and add to the map
-  for (i in seq_along(all_routes_directions)) {
-    directions <- all_routes_directions[[i]]
-    # Decode and add the polyline for each route
-    polyline_data <- decode_pl(directions$routes$overview_polyline$points)
-    polyline_df <- as.data.frame(polyline_data)
-    names(polyline_df) <- c("lat", "lng")
-    
-    # We generate a unique ID for each polyline
-    polyline_df$id <- paste("route", i, sep = "_")
-    route_color <- hex_colors[i %% length(hex_colors) + 1]
-    map <- add_polylines(map, data = polyline_df, lat = "lat", lon = "lng", 
-                         id = "id", stroke_colour = route_color, stroke_weight = 4)
+  for (i in selectedRoutes) {
+    if (i <= length(all_routes_directions)) {
+      directions <- all_routes_directions[[i]]
+      polyline_data <- decode_pl(directions$routes$overview_polyline$points)
+      polyline_df <- as.data.frame(polyline_data)
+      names(polyline_df) <- c("lat", "lng")
+      
+      polyline_df$id <- paste("route", i, sep = "_")
+      route_color <- hex_colors[i %% length(hex_colors) + 1]
+      map <- add_polylines(map, data = polyline_df, lat = "lat", lon = "lng", 
+                           id = "id", stroke_colour = route_color, stroke_weight = 4)
+    }
   }
   blue_icon <- list(
     url = "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"  # URL to a custom marker icon
