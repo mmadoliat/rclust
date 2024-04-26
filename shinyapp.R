@@ -8,34 +8,14 @@ library(dplyr)
 library(googleway)
 library(httr)
 library(jsonlite)
+library(shinythemes)
 
 source("GoogleApi.R")
 source("danny.R")
 
-# map <- displayRoutes(.5, 5)
-# 
-# ui <- fluidPage(
-#   titlePanel("Shiny Map App"),
-#   mainPanel(
-#     google_mapOutput("map")
-#   )
-# )
-# 
-# server <- function(input, output) {
-#   output$map <- renderGoogle_map({
-#     map <- add_markers(
-#       map,
-#       data = geo_data_df[i, , drop = FALSE],
-#       lat = "latitude",
-#       lon = "longitude",
-#       marker_icon = list(url = icon_url)
-#     )
-#     map
-#   })
-# }
-
 ui <- fluidPage(
-  titlePanel("Dynamic Route Map"),
+  titlePanel("GoKidsGoWeb: Route Cluster Map"),
+  theme = shinytheme("superhero"),
   sidebarLayout(
     sidebarPanel(
       sliderInput("weight", "Weight:", 
@@ -60,8 +40,5 @@ server <- function(input, output, session) {
     mapData()
   })
 }
-
-# Ensure the 'displayRoutes' function and its dependencies are loaded or defined in your script.
-
 
 shinyApp(ui = ui, server = server)
