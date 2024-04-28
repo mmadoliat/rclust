@@ -18,11 +18,11 @@ displayRoutes <- function(weight,numClusters,selectedRoutes) { #main function (u
   all_routes_directions <- get_all_directions(locations, api_key)
   
   flat_waypoints <- unlist(locations$waypoints, recursive = FALSE)
-  all_addresses <- c(locations$origins, locations$destinations, flat_waypoints)
-  all_addresses <- all_addresses[!sapply(all_addresses, is.null)]
+  waypoint_types <- rep("waypoint", length(flat_waypoints))
   origin_types <- rep("origin", length(locations$origins))
   destination_types <- rep("destination", length(locations$destinations))
-  waypoint_types <- rep("waypoint", length(flat_waypoints))
+  all_addresses <- c(locations$origins, locations$destinations, flat_waypoints)
+  
   
   all_types <- c(origin_types, destination_types, waypoint_types)
   geo_data_df <- geocode_address(all_addresses, all_types, api_key)
@@ -33,16 +33,17 @@ displayRoutes <- function(weight,numClusters,selectedRoutes) { #main function (u
   colors <- c("red", "blue", "green", "purple", "orange", "brown", "black", "grey", "pink")
   hex_colors <- rgb(col2rgb(colors)/255, maxColorValue=1)
   # Loop through each route's directions and add to the map
-  for (i in selectedRoutes) {
+  for (i in selectedRoutes) { #selected routes is chosen by user
     if (i <= length(all_routes_directions)) {
       directions <- all_routes_directions[[i]]
+      #formating maps api object
       polyline_data <- decode_pl(directions$routes$overview_polyline$points)
       polyline_df <- as.data.frame(polyline_data)
       names(polyline_df) <- c("lat", "lng")
-      
       polyline_df$id <- paste("route", i, sep = "_")
-      route_color <- hex_colors[i %% length(hex_colors) + 1]
-      map <- add_polylines(map, data = polyline_df, lat = "lat", lon = "lng", 
+      
+      route_color <- hex_colors[i %% length(hex_colors) + 1] #different color per route
+      map <- add_polylines(map, data = polyline_df, lat = "lat", lon = "lng", #Create routes
                            id = "id", stroke_colour = route_color, stroke_weight = 4)
     }
   }
@@ -82,7 +83,7 @@ findLocation <- function(loc, data) {
   first_char <- substr(loc, 1, 1)
   num <- as.numeric(substr(loc, 2, nchar(loc)))
   if (first_char == "p") { # If it starts with 'p', use 'num' to index 'formatted_home'
-    location <- data$formatted_home[num]
+    location <- data$formatted_home[num] #order of data is same as route num like p1 & d1 is first data point
   } else if (first_char == "d") { # If it starts with 'd', use 'num' to index 'formatted_destination'
     location <- data$formatted_destination[num]
   }
@@ -134,7 +135,6 @@ getDetails <- function(hc, numClusters, data) {
 
 get_all_directions <- function(locations, api_key) {
   all_directions <- list()
-  
   for (i in seq_along(locations$origins)) {
     # Get directions
     directions <- google_directions(
@@ -148,7 +148,6 @@ get_all_directions <- function(locations, api_key) {
     
     all_directions[[i]] <- directions
   }
-  
   return(all_directions)
 }
 
