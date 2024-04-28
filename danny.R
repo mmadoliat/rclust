@@ -7,14 +7,14 @@ library(googleway)
 library(httr)
 library(jsonlite)
 
-displayRoutes <- function(weight,numClusters,selectedRoutes) {
+displayRoutes <- function(weight,numClusters,selectedRoutes) { #main function (used in shiny)
   load("pdist.Rda")
   load("ptime.Rda")
   load("data.Rda")
   
   hc <- test::rhclust(pdist, ptime, weight, data = data)
   api_key <- "AIzaSyAn0ucCBVnBAOvhO2KUbN_gxW7bt6umiuw"
-  locations <- getDetails(numClusters)
+  locations <- getDetails(hc,numClusters,data) #returns list of 3 types of location
   all_routes_directions <- get_all_directions(locations, api_key)
   
   flat_waypoints <- unlist(locations$waypoints, recursive = FALSE)
@@ -78,7 +78,7 @@ displayRoutes <- function(weight,numClusters,selectedRoutes) {
   return (map)
 }
 
-findLocation <- function(loc) {
+findLocation <- function(loc, data) {
   first_char <- substr(loc, 1, 1)
   num <- as.numeric(substr(loc, 2, nchar(loc)))
   if (first_char == "p") { # If it starts with 'p', use 'num' to index 'formatted_home'
@@ -89,43 +89,43 @@ findLocation <- function(loc) {
   return (location)
 }
 
-getDetails <- function(numClusters) {
+getDetails <- function(hc, numClusters, data) {
   origins <- list()
   destinations <- list()
   waypoint_vectors <- list()
   if (numClusters == 3) {
-    routeNum = c(1,6,7)
+    routeNum = c(1,6,7)  # cluster #'s 1, 6, and 7
     for (i in 1:3) {
-      origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]])
+      origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]], data)
       if (i == 1) {
-        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[4]])
-        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:3], findLocation)
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[4]], data)
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:3], findLocation, data)
       } else {
-        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[8]])
-        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:7], findLocation)
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[8]], data)
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:7], findLocation, data)
       }
     }
   } else if (numClusters == 2) {
     routeNum = c(1,8)
     for (i in 1:2) {
-      origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]])
+      origins[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[1]], data)
       if (i == 1) {
-        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[4]])
-        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:3], findLocation)
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[4]], data)
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:3], findLocation, data)
       } else {
-        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[16]])
-        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:15], findLocation)
+        destinations[[i]] <- findLocation(hc$merge.route[[routeNum[i]]][[16]], data)
+        waypoint_vectors[[i]] <- lapply(hc$merge.route[[routeNum[i]]][2:15], findLocation, data)
       }
     }
   } else if (numClusters == 1) {
-    origins[[1]] <- findLocation(hc$merge.route[[9]][[1]])
-    destinations[[1]] <- findLocation(hc$merge.route[[9]][[20]])
-    waypoint_vectors[[1]] <- lapply(hc$merge.route[[9]][2:19], findLocation)
+    origins[[1]] <- findLocation(hc$merge.route[[9]][[1]], data)
+    destinations[[1]] <- findLocation(hc$merge.route[[9]][[20]], data)
+    waypoint_vectors[[1]] <- lapply(hc$merge.route[[9]][2:19], findLocation, data)
   } else {
     for (i in 1:5) {
-      origins[[i]] <- findLocation(hc$merge.route[[i]][[1]]) #Starting Point of route
-      destinations[[i]] <- findLocation(hc$merge.route[[i]][[4]]) #Ending point of route
-      waypoint_vectors[[i]] <- lapply(hc$merge.route[[i]][2:3], findLocation)
+      origins[[i]] <- findLocation(hc$merge.route[[i]][[1]], data)
+      destinations[[i]] <- findLocation(hc$merge.route[[i]][[4]], data)
+      waypoint_vectors[[i]] <- lapply(hc$merge.route[[i]][2:3], findLocation, data)
     }
   }
   return(list(origins = origins, destinations = destinations, waypoints = waypoint_vectors))
