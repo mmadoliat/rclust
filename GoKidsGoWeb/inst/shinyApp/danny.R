@@ -25,7 +25,7 @@ displayRoutes <- function(weight,numClusters,selectedRoutes) { #main function (u
   
   
   all_types <- c(origin_types, destination_types, waypoint_types)
-  geo_data_df <- geocode_address(all_addresses, all_types, api_key)
+  geo_data_df <- suppressWarnings(geocode_address(all_addresses, all_types, api_key))
   
   # Initialize a map using the central location from the geocoded data
   central_location <- suppressWarnings(geo_data_df[1, c("latitude", "longitude")])
