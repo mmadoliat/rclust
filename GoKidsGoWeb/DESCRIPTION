@@ -1,0 +1,23 @@
+Package: GoKidsGoWeb
+Type: Package
+Title: GoKidsGo Web Application
+Version: 0.1
+Date: 2024-05-02
+Author: Andrew Hiller
+Description: A Shiny application for GoKidsGo Web.
+License: GPL-3
+Imports:
+  shiny,
+  gmapsdistance,
+  readr,
+  ggplot2,
+  ggmap,
+  ggforce,
+  dplyr,
+  googleway,
+  httr,
+  jsonlite,
+  shinythemes
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 7.3.1

@@ -1,0 +1,2 @@
+export(runAppGoKidsGo)
+import(shiny, gmapsdistance, readr, ggplot2, ggmap, ggforce, dplyr, googleway, httr, jsonlite, shinythemes)
